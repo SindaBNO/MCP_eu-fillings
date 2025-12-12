@@ -1,0 +1,51 @@
+{
+  "name": "@openpharma-org/eu-filings-mcp-server",
+  "version": "0.0.1",
+  "description": "MCP server for European financial filings via ESEF (European Single Electronic Format). Provides access to financial statements, XBRL data, and regulatory filings from EU companies through the filings.xbrl.org API.",
+  "main": "src/index.js",
+  "bin": {
+    "eu-filings-mcp-server": "src/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js",
+    "build": "mkdir -p dist && cp -r src/* dist/",
+    "prebuild": "rm -rf dist"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "esef",
+    "european-filings",
+    "financial-data",
+    "xbrl",
+    "ifrs",
+    "eu-companies",
+    "financial-statements",
+    "lei",
+    "model-context-protocol",
+    "esma",
+    "european-securities"
+  ],
+  "author": "Joan <uh-joan>",
+  "license": "MIT",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openpharma-org/eu-filings-mcp-server.git"
+  },
+  "homepage": "https://github.com/openpharma-org/eu-filings-mcp-server",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.0",
+    "axios": "^1.10.0",
+    "cheerio": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}
