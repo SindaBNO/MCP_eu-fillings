@@ -1,25 +1,25 @@
-# European Financial Filings MCP Server
+# Unofficial European Financial Filings MCP Server
 
 A Model Context Protocol (MCP) server that provides comprehensive access to European company financial filings via ESEF (European Single Electronic Format). This server enables AI assistants and applications to search, retrieve, and analyze financial statements and XBRL data from 27+ European countries plus Switzerland.
 
-## 🚀 Key Features
+##  Key Features
 
-- 🌍 **Pan-European Coverage**: Access filings from 27+ EU countries plus UK, Norway, Ukraine, and Switzerland
-- 🔍 **Company Search**: Find companies by name or LEI across all European markets
-- 📋 **Complete Filing Access**: Retrieve filing histories and document details
-- 📊 **XBRL Data Extraction**: Parse and analyze IFRS-tagged financial data
-- 🏢 **LEI Integration**: Legal Entity Identifier support with GLEIF fallback
-- 🇨🇭 **Swiss Companies**: Direct access to Swiss company metadata and SIX Exchange blue chips
-- 🔌 **MCP Compatible**: Works seamlessly with Cursor, Claude Desktop, and other MCP clients
-- ⚡ **Real-time Data**: Direct access to filings.xbrl.org database (23,000+ filings)
+- **Pan-European Coverage**: Access filings from 27+ EU countries plus UK, Norway, Ukraine, and Switzerland
+- **Company Search**: Find companies by name or LEI across all European markets
+- **Complete Filing Access**: Retrieve filing histories and document details
+- **XBRL Data Extraction**: Parse and analyze IFRS-tagged financial data
+- **LEI Integration**: Legal Entity Identifier support with GLEIF fallback
+- **Swiss Companies**: Direct access to Swiss company metadata and SIX Exchange blue chips
+- **MCP Compatible**: Works seamlessly with Cursor, Claude Desktop, and other MCP clients
+- **Real-time Data**: Direct access to filings.xbrl.org database (23,000+ filings)
 
-## 🎯 What is ESEF?
+## What is ESEF?
 
 The European Single Electronic Format (ESEF) is the mandatory electronic reporting format for companies with securities traded on EU regulated markets. Since 2021, all annual financial reports must be prepared in XHTML format with IFRS consolidated financial statements marked up using inline XBRL (iXBRL).
 
 **Data Source**: This server uses the [filings.xbrl.org](https://filings.xbrl.org) API, which provides free public access to ESEF filings across Europe.
 
-## 📊 Complete API Reference
+## Complete API Reference
 
 The server provides a unified `eu-filings` tool with **16 powerful methods**:
 
@@ -271,11 +271,9 @@ Analyze financial metrics over time with growth rates and trend analysis.
 
 **Returns**: Time-series data with period-over-period growth rates, geographic mix analysis, and trend detection.
 
-## 📥 Installation & Setup
+## Installation & Setup
 
-### Quick Start with Claude Desktop
-
-Add to your Claude Desktop MCP configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+### Usage
 
 ```json
 {
@@ -286,38 +284,6 @@ Add to your Claude Desktop MCP configuration (`~/Library/Application Support/Cla
     }
   }
 }
-```
-
-### Installation from NPM (Coming Soon)
-
-```bash
-npm install -g @openpharma-org/eu-filings-mcp-server
-```
-
-Then in your MCP config:
-
-```json
-{
-  "mcpServers": {
-    "eu-filings": {
-      "command": "npx",
-      "args": ["@openpharma-org/eu-filings-mcp-server"]
-    }
-  }
-}
-```
-
-### Development Setup
-
-```bash
-# Clone the repository
-cd eu-filings-mcp-server
-
-# Install dependencies
-npm install
-
-# Run the server
-npm start
 ```
 
 ## 🌍 Supported Countries
@@ -404,7 +370,7 @@ ESEF filings include dimensional breakdowns for:
 - **Business Segments**: Performance by operating segment
 - **Products/Services**: Revenue by product line
 
-## 🔍 Example Queries
+## Example Queries
 
 ### Find a Specific Company
 ```javascript
@@ -441,102 +407,16 @@ ESEF filings include dimensional breakdowns for:
 }
 ```
 
-## 🏗️ Architecture
-
-```
-eu-filings-mcp-server/
-├── src/
-│   ├── index.js         # MCP server implementation
-│   ├── esef-api.js      # filings.xbrl.org API client
-│   └── xbrl-parser.js   # XBRL/iXBRL parser for IFRS
-├── package.json
-└── README.md
-```
-
-### Data Flow
-
-1. **MCP Client** (Claude, Cursor) calls `eu-filings` tool
-2. **MCP Server** routes to appropriate method
-3. **ESEF API Client** queries filings.xbrl.org
-4. **XBRL Parser** processes financial data (when needed)
-5. **Response** returned in JSON format
-
-### API Compliance
-
-- ✅ **Public API**: Free access to filings.xbrl.org
-- ✅ **JSON:API Standard**: Uses JSON:API 1.0 specification
-- ✅ **Rate Limiting**: Conservative request pacing
-- ✅ **Error Recovery**: Graceful degradation with GLEIF fallback
-
-## 🔄 Comparison with SEC Server
-
-| Feature | SEC EDGAR | EU Filings (ESEF) |
-|---------|-----------|-------------------|
-| **Coverage** | US companies | 27+ European countries |
-| **Format** | iXBRL | iXBRL |
-| **Taxonomy** | US-GAAP | IFRS |
-| **Company ID** | CIK | LEI |
-| **Data Source** | data.sec.gov | filings.xbrl.org |
-| **Historical Data** | Extensive (decades) | Recent (2021+) |
-| **Authentication** | User-Agent required | None required |
-
-## 🚀 Future Enhancements
-
-### Phase 2 (Planned)
-- Advanced dimensional fact extraction
-- Fact table building with IFRS concepts
-- Time-series financial analysis
-- Value-based fact search
-
-### Phase 3 (Planned)
-- UK Companies House integration
-- Enhanced LEI resolver
-- Cross-border consolidation
-- ESG/sustainability data (CSRD)
-
-### ESAP Integration (2027)
-When the European Single Access Point (ESAP) launches in 2027, this server will be updated to integrate with the centralized EU data platform.
-
-## 📚 Resources
-
-- 🌐 **filings.xbrl.org**: [ESEF Filings Database](https://filings.xbrl.org)
-- 📖 **ESEF Manual**: [ESMA ESEF Reporting Manual](https://www.esma.europa.eu/document/esef-reporting-manual)
-- 🏛️ **ESMA**: [European Securities and Markets Authority](https://www.esma.europa.eu)
-- 📊 **IFRS**: [IFRS Foundation](https://www.ifrs.org)
-- 🔢 **GLEIF**: [Global LEI Foundation](https://www.gleif.org)
-
-## 🤝 Contributing
-
-Contributions are welcome! This is an open-source project aimed at improving access to European financial data.
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## ⚠️ Important Notes
-
-- This is an unofficial tool not affiliated with ESMA or XBRL International
-- Data is sourced from public filings.xbrl.org database
-- Always verify critical financial data through official regulatory sources
-- ESEF filings are available from 2021 onwards (when the mandate started)
-- Some companies may file in multiple countries (check all relevant jurisdictions)
-
-## 🐛 Known Limitations
+## Known Limitations
 
 1. **Company Search**: The API doesn't support direct name search, so we search through recent filings. For best results, use LEI when known.
 2. **Historical Data**: Only covers filings from 2021 onwards (ESEF mandate start date)
 3. **Data Quality**: Varies by country and company; check validation messages
 4. **Rate Limits**: Be considerate with API usage (no official limits specified)
 
-## 💡 Tips
+## Tips
 
 - **Use LEI for precision**: If you know a company's LEI, use `get_company_by_lei` for fastest results
 - **Filter by country**: Narrow searches with country codes for better performance
 - **Check validation**: Use `get_filing_validation` to assess data quality
 - **Multiple formats available**: Each filing provides package (ZIP), JSON, XHTML, and interactive viewer URLs
-
----
-
-**Built with ❤️ for the financial data community**
-
-For questions, issues, or feature requests, please visit our [GitHub repository](https://github.com/openpharma-org/eu-filings-mcp-server).
