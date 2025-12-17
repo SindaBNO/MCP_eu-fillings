@@ -6,8 +6,8 @@
  */
 
 const axios = require('axios');
-const { getCompanyFilings, getCompanyByLEI, searchCompanies } = require('./src/esef-api.js');
-const { buildFactTable } = require('./src/fact-table-builder.js');
+const { getCompanyFilings, getCompanyByLEI, searchCompanies } = require('../src/esef-api.js');
+const { buildFactTable } = require('../src/fact-table-builder.js');
 
 console.log('='.repeat(90));
 console.log('  MULTI-JURISDICTION FILING ANALYSIS');

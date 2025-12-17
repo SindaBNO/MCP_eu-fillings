@@ -8,7 +8,7 @@ const {
   searchSwissCompanies,
   getSwissCompanyInfo,
   getSIXListedCompanies
-} = require('./src/switzerland-api.js');
+} = require('../src/switzerland-api.js');
 
 console.log('='.repeat(80));
 console.log('  SWISS COMPANY INTEGRATION TEST');

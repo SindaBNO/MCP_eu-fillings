@@ -6,9 +6,9 @@
  */
 
 const axios = require('axios');
-const { getCompanyFilings, getCompanyByLEI } = require('./src/esef-api.js');
-const { buildFactTable } = require('./src/fact-table-builder.js');
-const { timeSeriesAnalysis } = require('./src/time-series-analyzer.js');
+const { getCompanyFilings, getCompanyByLEI } = require('../src/esef-api.js');
+const { buildFactTable } = require('../src/fact-table-builder.js');
+const { timeSeriesAnalysis } = require('../src/time-series-analyzer.js');
 
 // Company identifiers
 const NOVO_NORDISK_LEI = '549300DAQ1CVT6CXN342'; // Novo Nordisk A/S (Denmark)

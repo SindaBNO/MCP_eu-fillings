@@ -32,6 +32,14 @@ const {
   getSIXListedCompanies
 } = require('./switzerland-api.js');
 
+const {
+  searchUKCompanies,
+  getUKCompanyProfile,
+  getUKCompanyFilings,
+  getUKCompanyAccounts,
+  getFTSE100Companies
+} = require('./uk-api.js');
+
 const { buildFactTable } = require('./fact-table-builder.js');
 const { timeSeriesAnalysis } = require('./time-series-analyzer.js');
 
@@ -72,13 +80,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 'search_swiss_companies',
                 'get_swiss_company_info',
                 'get_six_listed_companies',
+                'search_uk_companies',
+                'get_uk_company_profile',
+                'get_uk_company_filings',
+                'get_uk_company_accounts',
+                'get_ftse100_companies',
                 'get_dimensional_facts',
                 'build_fact_table',
                 'search_facts_by_value',
                 'time_series_analysis'
               ],
-              description: 'The operation to perform: search_companies (search by company name), get_company_by_lei (lookup company by LEI), get_company_filings (get filing history for a company), get_country_companies (list companies from a country), get_entity_details (get detailed entity information), get_filing_facts (extract XBRL facts from a filing), get_filing_validation (get validation messages for a filing), filter_filings (filter filing results), get_dax40_companies (get list of major German companies with LEIs)',
-              examples: ['search_companies', 'get_company_filings', 'get_filing_facts']
+              description: 'The operation to perform: search_companies (search EU by name via GLEIF), get_company_by_lei (lookup by LEI), get_company_filings (ESEF filings), search_uk_companies (search UK Companies House), get_uk_company_filings (UK filing history), get_uk_company_accounts (UK annual accounts), get_ftse100_companies (major UK companies)',
+              examples: ['search_companies', 'search_uk_companies', 'get_uk_company_accounts']
             },
             query: {
               type: 'string',
@@ -158,6 +171,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             filters: {
               type: 'object',
               description: 'For search_facts_by_value: Additional search filters'
+            },
+            company_number: {
+              type: 'string',
+              description: 'For UK methods: UK Companies House company number (8 characters)',
+              examples: ['00102498', '03888792', '04366849']
+            },
+            category: {
+              type: 'string',
+              description: 'For get_uk_company_filings: Filter by filing category',
+              examples: ['accounts', 'confirmation-statement', 'annual-return']
             }
           },
           required: ['method'],
@@ -186,19 +209,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error('query parameter is required for search_companies');
         }
 
-        // Special handling for Germany
-        if (country && country.toUpperCase() === 'DE') {
-          const results = await searchGermanCompaniesByName(query, { limit });
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(results, null, 2)
-              }
-            ]
-          };
-        }
-
+        // All searches now go through GLEIF (1.6M+ EU companies)
         const results = await searchCompanies(query, { country, limit });
         return {
           content: [
@@ -418,6 +429,83 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_six_listed_companies': {
         const results = await getSIXListedCompanies();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2)
+            }
+          ]
+        };
+      }
+
+      // UK Companies House methods
+      case 'search_uk_companies': {
+        const { query, limit } = params;
+        if (!query) {
+          throw new Error('query parameter is required for search_uk_companies');
+        }
+        const results = await searchUKCompanies(query, { limit });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_uk_company_profile': {
+        const { company_number } = params;
+        if (!company_number) {
+          throw new Error('company_number parameter is required for get_uk_company_profile');
+        }
+        const results = await getUKCompanyProfile(company_number);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_uk_company_filings': {
+        const { company_number, limit, category } = params;
+        if (!company_number) {
+          throw new Error('company_number parameter is required for get_uk_company_filings');
+        }
+        const results = await getUKCompanyFilings(company_number, { limit, category });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_uk_company_accounts': {
+        const { company_number, limit } = params;
+        if (!company_number) {
+          throw new Error('company_number parameter is required for get_uk_company_accounts');
+        }
+        const results = await getUKCompanyAccounts(company_number, { limit });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'get_ftse100_companies': {
+        const results = await getFTSE100Companies();
         return {
           content: [
             {

@@ -31,153 +31,147 @@ async function makeESEFRequest(url) {
 }
 
 /**
- * Search for companies by name in the ESEF database
+ * Search for companies by name using GLEIF database
+ * Searches across 1.6M+ European companies with LEIs
  * @param {string} query - Company name to search for
  * @param {Object} options - Search options
- * @param {string} [options.country] - Filter by country code (FR, DE, IT, etc.)
- * @param {number} [options.limit] - Maximum number of results (default: 50)
+ * @param {string} [options.country] - Filter by country code (FR, DE, IT, ES, NL, etc.)
+ * @param {number} [options.limit] - Maximum number of results (default: 20)
  * @returns {Promise<Object>} Search results with company entities
  */
 async function searchCompanies(query, options = {}) {
-  const { country, limit = 50 } = options;
+  const { country, limit = 20 } = options;
 
-  // Build URL with filters
-  let url = `${ESEF_API_BASE}/entities?page[size]=${limit}`;
+  try {
+    // Build GLEIF API URL with name filter
+    let url = `${GLEIF_API_BASE}/lei-records?filter[entity.legalName]=${encodeURIComponent(query)}&page[size]=${limit}`;
 
-  // filings.xbrl.org doesn't support name search directly, so we need to:
-  // 1. Get all entities (with pagination)
-  // 2. Filter client-side by name match
-  // For MVP, we'll search through filings and extract unique entities
-
-  let filingsUrl = `${ESEF_API_BASE}/filings?page[size]=100&sort=-processed`;
-
-  if (country) {
-    filingsUrl += `&filter[country]=${country.toUpperCase()}`;
-  }
-
-  const data = await makeESEFRequest(filingsUrl);
-
-  // Extract unique entities from filings
-  const entities = new Map();
-  const searchLower = query.toLowerCase();
-
-  if (data.data && Array.isArray(data.data)) {
-    for (const filing of data.data) {
-      // Entity is in relationships.entity.links.related
-      const entityLink = filing.relationships?.entity?.links?.related;
-      if (!entityLink) continue;
-
-      // Extract entity ID from the link (format: /api/entities/123456)
-      const entityId = entityLink.split('/').pop();
-
-      const filingAttrs = filing.attributes || {};
-
-      entities.set(entityId, {
-        entity_id: entityId,
-        filing_sample: {
-          id: filing.id,
-          country: filingAttrs.country,
-          period_end: filingAttrs.period_end
-        }
-      });
-
-      if (entities.size >= limit) break;
+    // Add country filter if specified
+    if (country) {
+      url += `&filter[entity.legalAddress.country]=${country.toUpperCase()}`;
     }
-  }
 
-  // Fetch entity details for top results
-  const enrichedEntities = [];
-  let matchCount = 0;
-
-  for (const [entityId, entityInfo] of entities.entries()) {
-    if (matchCount >= limit) break;
-
-    try {
-      const entityUrl = `${ESEF_API_BASE}/entities/${entityId}`;
-      const entityData = await makeESEFRequest(entityUrl);
-
-      if (entityData.data?.attributes) {
-        const attrs = entityData.data.attributes;
-        const entityName = attrs.name || '';
-
-        // Filter by search query
-        if (entityName.toLowerCase().includes(searchLower)) {
-          enrichedEntities.push({
-            entity_id: entityId,
-            lei: attrs.identifier || '',
-            name: entityName,
-            country: entityInfo.filing_sample.country,
-            api_entity_id: entityId,
-            sample_filing: entityInfo.filing_sample
-          });
-          matchCount++;
-        }
+    const response = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        'Accept': 'application/vnd.api+json',
+        'User-Agent': 'EU-Filings-MCP-Server/0.0.1'
       }
+    });
 
-      // Rate limiting - be gentle with the API
-      await new Promise(resolve => setTimeout(resolve, 100));
+    const companies = [];
 
-    } catch (error) {
-      // Skip entities we can't fetch
-      continue;
+    if (response.data?.data && Array.isArray(response.data.data)) {
+      for (const record of response.data.data) {
+        const attrs = record.attributes || {};
+        const entity = attrs.entity || {};
+        const legalAddress = entity.legalAddress || {};
+
+        companies.push({
+          lei: attrs.lei,
+          name: entity.legalName?.name || '',
+          country: legalAddress.country || '',
+          city: legalAddress.city || '',
+          postal_code: legalAddress.postalCode || '',
+          legal_form: entity.legalForm?.id || '',
+          status: entity.status || '',
+          registered_as: entity.registeredAs || '',
+          source: 'GLEIF'
+        });
+      }
     }
-  }
 
-  return {
-    query,
-    companies: enrichedEntities,
-    total_found: enrichedEntities.length,
-    country_filter: country || 'all',
-    source: 'ESEF filings.xbrl.org',
-    note: 'Results limited by API pagination. For specific companies, use LEI search.'
-  };
+    const totalInGleif = response.data?.meta?.pagination?.total || companies.length;
+
+    return {
+      query,
+      companies,
+      total_found: companies.length,
+      total_available: totalInGleif,
+      country_filter: country || 'all',
+      source: 'GLEIF (Global LEI Foundation)',
+      note: totalInGleif > limit
+        ? `Showing ${companies.length} of ${totalInGleif} matches. Use LEI for detailed company info.`
+        : null
+    };
+
+  } catch (error) {
+    if (error.response?.status === 400) {
+      throw new Error(`Invalid search query: ${query}`);
+    }
+    throw new Error(`Company search failed: ${error.message}`);
+  }
 }
 
 /**
  * Get company information by LEI (Legal Entity Identifier)
+ * Uses GLEIF as primary source, checks ESEF for filings availability
  * @param {string} lei - Legal Entity Identifier
  * @returns {Promise<Object>} Company information
  */
 async function getCompanyByLEI(lei) {
-  // Search for entity by LEI (identifier field)
-  const url = `${ESEF_API_BASE}/entities?filter[identifier]=${lei}`;
-
-  const data = await makeESEFRequest(url);
-
-  if (!data.data || data.data.length === 0) {
-    // Try GLEIF API as fallback for LEI information
-    try {
-      const gleifUrl = `${GLEIF_API_BASE}/lei-records/${lei}`;
-      const gleifData = await axios.get(gleifUrl, { timeout: 10000 });
-
-      if (gleifData.data?.data?.attributes) {
-        const attrs = gleifData.data.data.attributes;
-        return {
-          lei: lei,
-          name: attrs.entity?.legalName?.name || '',
-          jurisdiction: attrs.entity?.legalAddress?.country || '',
-          status: attrs.entity?.status || '',
-          source: 'GLEIF',
-          note: 'Company found in GLEIF database but no ESEF filings found',
-          has_esef_filings: false
-        };
+  try {
+    // Primary: Get company info from GLEIF
+    const gleifUrl = `${GLEIF_API_BASE}/lei-records/${lei}`;
+    const gleifResponse = await axios.get(gleifUrl, {
+      timeout: 10000,
+      headers: {
+        'Accept': 'application/vnd.api+json',
+        'User-Agent': 'EU-Filings-MCP-Server/0.0.1'
       }
-    } catch (gleifError) {
-      throw new Error(`LEI not found in ESEF database or GLEIF: ${lei}`);
+    });
+
+    if (!gleifResponse.data?.data?.attributes) {
+      throw new Error(`LEI not found: ${lei}`);
     }
+
+    const attrs = gleifResponse.data.data.attributes;
+    const entity = attrs.entity || {};
+    const legalAddress = entity.legalAddress || {};
+
+    const companyInfo = {
+      lei: lei,
+      name: entity.legalName?.name || '',
+      country: legalAddress.country || '',
+      city: legalAddress.city || '',
+      postal_code: legalAddress.postalCode || '',
+      address: [
+        legalAddress.addressLines?.join(', '),
+        legalAddress.postalCode,
+        legalAddress.city,
+        legalAddress.country
+      ].filter(Boolean).join(', '),
+      legal_form: entity.legalForm?.id || '',
+      status: entity.status || '',
+      registered_as: entity.registeredAs || '',
+      registration_date: attrs.registration?.initialRegistrationDate || '',
+      last_update: attrs.registration?.lastUpdateDate || '',
+      source: 'GLEIF'
+    };
+
+    // Secondary: Check if company has ESEF filings
+    try {
+      const esefUrl = `${ESEF_API_BASE}/entities?filter[identifier]=${lei}`;
+      const esefData = await makeESEFRequest(esefUrl);
+
+      if (esefData.data && esefData.data.length > 0) {
+        companyInfo.entity_id = esefData.data[0].id;
+        companyInfo.has_esef_filings = true;
+      } else {
+        companyInfo.has_esef_filings = false;
+      }
+    } catch (esefError) {
+      companyInfo.has_esef_filings = false;
+    }
+
+    return companyInfo;
+
+  } catch (error) {
+    if (error.response?.status === 404) {
+      throw new Error(`LEI not found in GLEIF database: ${lei}`);
+    }
+    throw new Error(`Failed to lookup LEI: ${error.message}`);
   }
-
-  const entity = data.data[0];
-  const attrs = entity.attributes;
-
-  return {
-    lei: attrs.identifier,
-    name: attrs.name || '',
-    entity_id: entity.id,
-    api_entity_id: entity.id,
-    has_esef_filings: true,
-    source: 'ESEF filings.xbrl.org'
-  };
 }
 
 /**
@@ -368,10 +362,13 @@ async function getFilingFacts(filingId) {
 
   const attrs = filingData.data.attributes || {};
 
+  const FILINGS_BASE = 'https://filings.xbrl.org';
+
   // Download JSON representation if available
   if (attrs.json_url) {
     try {
-      const jsonResponse = await axios.get(attrs.json_url, {
+      const fullJsonUrl = attrs.json_url.startsWith('http') ? attrs.json_url : FILINGS_BASE + attrs.json_url;
+      const jsonResponse = await axios.get(fullJsonUrl, {
         timeout: 60000,
         headers: {
           'Accept': 'application/json'
@@ -382,7 +379,7 @@ async function getFilingFacts(filingId) {
         filing_id: filingId,
         period_end: attrs.period_end,
         country: attrs.country,
-        json_url: attrs.json_url,
+        json_url: fullJsonUrl,
         facts: jsonResponse.data,
         format: 'xbrl-json',
         source: 'ESEF filings.xbrl.org'
@@ -398,10 +395,10 @@ async function getFilingFacts(filingId) {
       filing_id: filingId,
       period_end: attrs.period_end,
       country: attrs.country,
-      package_url: attrs.package_url,
-      xhtml_url: attrs.xhtml_url,
-      viewer_url: attrs.viewer_url,
-      note: 'JSON facts not available. Use package_url or xhtml_url for detailed data.',
+      package_url: FILINGS_BASE + attrs.package_url,
+      xhtml_url: attrs.xhtml_url ? FILINGS_BASE + attrs.xhtml_url : null,
+      viewer_url: attrs.viewer_url ? FILINGS_BASE + attrs.viewer_url : null,
+      note: 'JSON facts not available. Use package_url or viewer_url for detailed data.',
       source: 'ESEF filings.xbrl.org'
     };
   }

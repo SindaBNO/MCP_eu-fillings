@@ -8,9 +8,9 @@
 const {
   getDimensionalFacts,
   searchFactsByValue
-} = require('./src/esef-api.js');
-const { buildFactTable } = require('./src/fact-table-builder.js');
-const { timeSeriesAnalysis } = require('./src/time-series-analyzer.js');
+} = require('../src/esef-api.js');
+const { buildFactTable } = require('../src/fact-table-builder.js');
+const { timeSeriesAnalysis } = require('../src/time-series-analyzer.js');
 
 // Use a French company with recent filings
 const TEST_ENTITY_ID = '969500I1EJGUAT223F44';
@@ -154,7 +154,7 @@ async function testPhase2() {
     console.log('--------------------------------------------------------------');
     try {
       // First get a filing
-      const filings = await require('./src/esef-api.js').getCompanyFilings(TEST_ENTITY_ID, { limit: 1 });
+      const filings = await require('../src/esef-api.js').getCompanyFilings(TEST_ENTITY_ID, { limit: 1 });
 
       if (filings.filings && filings.filings.length > 0) {
         const filingId = filings.filings[0].filing_id;

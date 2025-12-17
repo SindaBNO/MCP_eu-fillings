@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const axios = require('axios');
-const { downloadAndParseXBRL, findDimensionalFacts } = require('./src/xbrl-parser.js');
+const { downloadAndParseXBRL, findDimensionalFacts } = require('../src/xbrl-parser.js');
 
 async function debugXBRL() {
   console.log('=== XBRL JSON DEBUG TEST ===\n');

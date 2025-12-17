@@ -4,8 +4,8 @@
  * Simplified Phase 2 Tests - Focus on functionality rather than specific concepts
  */
 
-const { buildFactTable } = require('./src/fact-table-builder.js');
-const { getCompanyFilings } = require('./src/esef-api.js');
+const { buildFactTable } = require('../src/fact-table-builder.js');
+const { getCompanyFilings } = require('../src/esef-api.js');
 
 // Use a French company with recent filings
 const TEST_ENTITY_ID = '969500I1EJGUAT223F44';

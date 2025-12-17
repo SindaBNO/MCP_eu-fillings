@@ -9,7 +9,7 @@ const {
   getGermanCompanyByLEI,
   getGermanCompanyFilings,
   getDAX40Companies
-} = require('./src/germany-api.js');
+} = require('../src/germany-api.js');
 
 async function runGermanTests() {
   console.log('🇩🇪 Testing German Company Integration\n');
