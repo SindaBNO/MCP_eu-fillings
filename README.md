@@ -11,9 +11,7 @@ A Model Context Protocol (MCP) server providing access to European company data 
 | **UK Companies House** | 5M+ UK companies | Filing history, annual accounts |
 | **Curated Lists** | DAX40, SIX, FTSE100 | Major index companies |
 
-## MCP Client Configuration
-
-Add to your MCP client (Claude Desktop, Cursor, etc.):
+## Usage
 
 ```json
 {
