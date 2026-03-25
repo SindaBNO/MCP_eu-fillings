@@ -2,6 +2,8 @@
 
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
+const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
+const express = require('express');
 const {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -636,11 +638,41 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start the server
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  const isSse = process.argv.includes('--sse');
 
-  // Log to stderr so it doesn't interfere with JSON-RPC
-  process.stderr.write('EU Filings MCP server running on stdio\n');
+  if (isSse) {
+    const app = express();
+    const transports = new Map();
+
+    app.get('/sse', async (req, res) => {
+      const transport = new SSEServerTransport('/messages', res);
+      transports.set(transport.sessionId, transport);
+      await server.connect(transport);
+
+      res.on('close', () => {
+        transports.delete(transport.sessionId);
+      });
+    });
+
+    app.post('/messages', async (req, res) => {
+      const sessionId = req.query.sessionId;
+      const transport = transports.get(sessionId);
+      if (transport) {
+        await transport.handlePostMessage(req, res);
+      } else {
+        res.status(404).send('Session not found');
+      }
+    });
+
+    const port = parseInt(process.argv.find(arg => arg.startsWith('--port='))?.split('=')[1] || '8001');
+    app.listen(port, () => {
+      process.stderr.write(`EU Filings MCP server running on SSE at http://localhost:${port}/sse\n`);
+    });
+  } else {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    process.stderr.write('EU Filings MCP server running on stdio\n');
+  }
 }
 
 main().catch((error) => {

@@ -7,8 +7,7 @@ from pathlib import Path
 from google.adk.agents.llm_agent import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
-from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
-from mcp import StdioServerParameters
+from google.adk.tools.mcp_tool.mcp_session_manager import SseConnectionParams
 
 # --- Azure OpenAI (LiteLLM) ---
 llm = LiteLlm(
@@ -19,21 +18,15 @@ llm = LiteLlm(
     stream=True  # Re-activé pour une meilleure expérience dans l'interface Web
 )
 
-# --- MCP Toolset (Local Stdio) ---
-# Chemin absolu vers l'index.js du serveur MCP
-mcp_server_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "index.js"))
-
+# --- MCP Toolset (SSE / HTTP) ---
+# Le serveur Node.js doit être lancé en mode SSE : 
+# node src/index.js --sse --port=8001
 eu_filings_tools = McpToolset(
-    connection_params=StdioConnectionParams(
-        server_params=StdioServerParameters(
-            command="node",
-            args=[mcp_server_path],
-            env=os.environ.copy(),
-        ),
+    connection_params=SseConnectionParams(
+        url="http://localhost:8001/sse",
         timeout=60.0  # Augmenté à 60s pour les extractions XBRL lourdes
     )
 )
-
 
 
 # --- Tool Wrapper to prevent ContextWindowExceedError ---
@@ -90,22 +83,22 @@ RÈGLE D'OR : TU AS L'INTERDICTION STRICTE DE RÉPONDRE DE MÉMOIRE. Tu dois SYS
 MÉTHODOLOGIE D'ANALYSE :
 
 1. RECHERCHE D'ENTREPRISE :
-   - Utilise `search_companies` (GLEIF) pour trouver le LEI d'une entreprise dans l'UE.
-   - Utilise `search_uk_companies` pour les entreprises britanniques via Companies House.
+   - Utilise `search_companies` (GLEIF) pour trouver le LEI d'une entreprise.
+   - IMPORTANT : Si la recherche (ex: "Total Energie") retourne plusieurs résultats, privilégie toujours l'entité mère (généralement nommée "SE", "PLC", "AG", "S.A.") et non les entités de type "Participations", "Finance" ou "Treasury".
+   - Si tu as un doute, utilise `get_company_by_lei` pour vérifier l'attribut `has_esef_filings`.
 
 2. RÉCUPÉRATION DES DOCUMENTS :
-   - Trouve les rapports financiers avec `get_country_companies` ou `get_company_filings`.
+   - Ne t'arrête pas au premier échec. Si une entité n'a pas de rapports pour l'année demandée, RECHERCHE à nouveau avec un nom plus précis ou essaie une autre entité de la liste de recherche.
+   - Par exemple, pour "Total Energie", si "TotalEnergies Participations" échoue, cherche "TotalEnergies SE".
    - Identifie les IDs de filings pour extraire les données XBRL.
 
 3. EXTRACTION DE DONNÉES (XBRL / ESEF) :
-   - ATTENTION : Pour les entreprises du CAC40 (ex: TotalEnergies), `get_filing_facts` peut retourner des données trop volumineuses (>20MB) et faire échouer la session.
-   - RECOMMANDATION : Si l'utilisateur demande des concepts spécifiques (Revenus, Actifs, etc.), utilise PRIORITAIREMENT `get_dimensional_facts` avec l'argument `search_criteria={"concept": "nom_du_concept"}` au lieu de `get_filing_facts`. 
-   - Utilise `get_filing_facts` uniquement si le filing est petit ou si tu as absolument besoin de tous les faits.
+   - ATTENTION : Pour les entreprises du CAC40 (ex: TotalEnergies), `get_filing_facts` peut retourner des données trop volumineuses (>20MB).
+   - RECOMMANDATION : Utilise PRIORITAIREMENT `get_dimensional_facts` avec l'argument `search_criteria={"concept": "nom_du_concept"}` (ex: "Assets", "Revenues", "ProfitLoss") pour aller plus vite.
 
 4. RESTITUTION :
    - Présente les chiffres sous forme de tableaux Markdown clairs.
-   - Cite toujours les sources et les identifiants techniques (LEI, Filing ID).
-   - Signale toute incohérence ou validation échouée via `get_filing_validation`.
+   - Cite toujours l'entité exacte trouvée, son LEI et sa source.
 """
 )
 

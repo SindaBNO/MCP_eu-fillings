@@ -38,7 +38,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.0",
     "axios": "^1.10.0",
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.0.0",
+    "express": "^5.2.1"
   },
   "engines": {
     "node": ">=18.0.0"
