@@ -1,0 +1,6 @@
+google-adk[extensions]
+python-dotenv
+mcp
+axios
+cheerio
+PyPDF2

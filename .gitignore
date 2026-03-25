@@ -1,8 +1,16 @@
 # Dependencies
 node_modules/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Build output
 build/
+dist/
 
 # Environment variables
 .env
@@ -30,6 +38,13 @@ Thumbs.db
 # Test coverage
 coverage/
 .nyc_output/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
 
 # npm
 *.tgz
@@ -38,3 +53,7 @@ package-lock.json.bak
 # Misc
 tmp/
 temp/
+
+# ADK
+.adk/
+downloads/
