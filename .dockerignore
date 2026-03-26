@@ -1,0 +1,17 @@
+node_modules
+venv
+.venv
+env
+__pycache__
+npm-debug.log
+.git
+.gitignore
+.adk
+.gemini
+mcp.log
+local.db
+Dockerfile
+.dockerignore
+README.md
+build
+dist

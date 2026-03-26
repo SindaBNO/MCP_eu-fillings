@@ -3,57 +3,24 @@ node_modules/
 venv/
 .venv/
 env/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
 
-# Build output
+# Build & Cache
 build/
 dist/
+__pycache__/
+*.py[cod]
+.adk/
+.gemini/
 
-# Environment variables
+# Environment & Logs
 .env
 .env.*
-.env.local
-.env.*.local
-
-# Logs
+mcp.log
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# OS files
+# Database
+local.db
+
+# OS
 .DS_Store
 Thumbs.db
-
-# IDE / Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Test coverage
-coverage/
-.nyc_output/
-.tox/
-.coverage
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-
-# npm
-*.tgz
-package-lock.json.bak
-
-# Misc
-tmp/
-temp/
-
-# ADK
-.adk/
-downloads/

@@ -664,9 +664,11 @@ async function main() {
       }
     });
 
-    const port = parseInt(process.argv.find(arg => arg.startsWith('--port='))?.split('=')[1] || '8001');
-    app.listen(port, () => {
-      process.stderr.write(`EU Filings MCP server running on SSE at http://localhost:${port}/sse\n`);
+    const host = process.argv.find(arg => arg.startsWith('--host='))?.split('=')[1] || '0.0.0.0';
+    const port = parseInt(process.argv.find(arg => arg.startsWith('--port='))?.split('=')[1] || '8017');
+    
+    app.listen(port, host, () => {
+      process.stderr.write(`EU Filings MCP server running on SSE at http://${host}:${port}/sse\n`);
     });
   } else {
     const transport = new StdioServerTransport();
